@@ -8,6 +8,23 @@
   </head>
   <body>
     <header>
+      <div class="header-actions">
+        <button id="login-toggle" class="login-btn" type="button">👤 Teacher Login</button>
+      </div>
+      <div id="login-panel" class="login-panel hidden">
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required />
+          </div>
+          <button type="submit">Log in</button>
+        </form>
+        <div id="login-message" class="message hidden"></div>
+      </div>
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
     </header>
@@ -23,6 +40,9 @@
 
       <section id="signup-container">
         <h3>Sign Up for an Activity</h3>
+        <p id="teacher-only-notice" class="teacher-only-notice">
+          Teacher login is required to register or remove students from activities.
+        </p>
         <form id="signup-form">
           <div class="form-group">
             <label for="email">Student Email:</label>
