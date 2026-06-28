@@ -3,6 +3,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginToggle = document.getElementById("login-toggle");
+  const loginPanel = document.getElementById("login-panel");
+  const loginForm = document.getElementById("login-form");
+  const loginMessage = document.getElementById("login-message");
+  const teacherOnlyNotice = document.getElementById("teacher-only-notice");
+
+  let currentTeacher = null;
+
+  function updateTeacherControls() {
+    const teacherMode = Boolean(currentTeacher);
+    signupForm.querySelectorAll("input, select, button[type='submit']").forEach((element) => {
+      element.disabled = !teacherMode;
+    });
+    teacherOnlyNotice.classList.toggle("hidden", teacherMode);
+    loginToggle.textContent = currentTeacher ? `👤 ${currentTeacher}` : "👤 Teacher Login";
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -30,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${currentTeacher ? `<button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button>` : ""}</li>`
                   )
                   .join("")}
               </ul>
@@ -60,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
       });
+
+      updateTeacherControls();
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -110,9 +128,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  loginToggle.addEventListener("click", () => {
+    loginPanel.classList.toggle("hidden");
+  });
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        currentTeacher = username;
+        updateTeacherControls();
+        loginMessage.textContent = result.message;
+        loginMessage.className = "message success";
+        loginForm.reset();
+        loginPanel.classList.add("hidden");
+      } else {
+        loginMessage.textContent = result.detail || "Login failed";
+        loginMessage.className = "message error";
+      }
+
+      loginMessage.classList.remove("hidden");
+    } catch (error) {
+      loginMessage.textContent = "Login failed. Please try again.";
+      loginMessage.className = "message error";
+      loginMessage.classList.remove("hidden");
+      console.error("Error logging in:", error);
+    }
+  });
+
   // Handle form submission
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!currentTeacher) {
+      messageDiv.textContent = "Teacher login required to register students.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      return;
+    }
 
     const email = document.getElementById("email").value;
     const activity = document.getElementById("activity").value;
@@ -154,6 +219,8 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  updateTeacherControls();
 
   // Initialize app
   fetchActivities();
